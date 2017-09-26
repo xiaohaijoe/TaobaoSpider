@@ -26,6 +26,7 @@ class ProductItem(scrapy.Item):
     comment_count = scrapy.Field()
     user_id = scrapy.Field()
     nick = scrapy.Field()
+    keyword = scrapy.Field()
 
 
 class CommentItem(scrapy.Item):
