@@ -17,7 +17,7 @@ db = client[MONGO_DB]
 keyword = '飞机杯'
 class KeywordSpider(CrawlSpider):
     name = 'keyword'
-    allowed_domains = ['taobao.com']
+    allowed_domains = ['taobao.com','tmall.com']
     start_urls = ['http://taobao.com/']
 
     # rules = (
@@ -31,7 +31,7 @@ class KeywordSpider(CrawlSpider):
 
     def parse(self, response):
         for i in [0]:
-            url = 'https://s.taobao.com/search?data-key=s&data-value='+ str(44 * i) +'&ajax=true&_ksTS=1506403406228_1114&callback=&ie=utf8&initiative_id=staobaoz_20170926&stats_click=search_radio_all%3A1&js=1&imgfile=&q='+ str(keyword) +'&suggest=0_1&_input_charset=utf-8&wq='+ str(keyword) +'&suggest_query='+ str(keyword) +'&source=suggest&bcoffset=4&p4ppushleft=%2C48&s=' + str(44 * (i + 1))
+            url = 'https://s.taobao.com/search?data-key=s&data-value='+ str(44 * i) +'&ajax=true&filter_tianmao=tmall&_ksTS=1506403406228_1114&callback=&ie=utf8&initiative_id=staobaoz_20170926&stats_click=search_radio_all%3A1&js=1&imgfile=&q='+ str(keyword) +'&suggest=0_1&_input_charset=utf-8&wq='+ str(keyword) +'&suggest_query='+ str(keyword) +'&source=suggest&bcoffset=4&p4ppushleft=%2C48&s=' + str(44 * (i + 1))
             # print(url)
             yield Request(url=url, callback=self.parse_page)
 
@@ -52,14 +52,16 @@ class KeywordSpider(CrawlSpider):
                 'comment_count': prod['comment_count'],
                 'user_id': prod['user_id'],
                 'nick': prod['nick'],
+                'isTmall': prod['shopcard']['isTmall'],
                 'keyword': keyword,
             }
             self.save_product(item)
-            comment_url = 'https://rate.tmall.com/list_detail_rate.htm?itemId='+ item['nid'] +'&sellerId=' + item['user_id'] + '&order=1&currentPage=1&append=0&content=1&tagId=&posi=&_ksTS=1506443143070_1091&callback='
-            yield Request(url=comment_url, meta={'nid': item['nid'], 'user_id': item['user_id']}, callback = self.parse_comment)
+            if item['isTmall']:
+                comment_url = 'https://rate.tmall.com/list_detail_rate.htm?itemId='+ item['nid'] +'&sellerId=' + item['user_id'] + '&order=1&currentPage=1&append=0&content=1&tagId=&posi=&_ksTS=1506443143070_1091&callback='
+                yield Request(url=comment_url, meta={'nid': item['nid'], 'user_id': item['user_id']}, callback=self.parse_comment)
 
     def parse_comment(self, response):
-        obj = json.loads(response.text)
+        obj = json.loads("{"+response.text)
         nid = response.meta['nid']
         sellerId = response.meta['user_id']
         comments = obj['rateDetail']['rateList']
